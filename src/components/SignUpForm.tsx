@@ -9,15 +9,16 @@ import { FcGoogle } from 'react-icons/fc';
 import { createUser } from '@/redux/features/user/userSlice';
 import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 type MyCustomUserAuthFormProps = {
   transferLink: string;
 } & React.HTMLAttributes<HTMLDivElement>;
 
-interface SignupFormInputs {
+interface SignUpFormInputs {
   email: string;
   password: string;
+  cPassword: string;
 }
 
 export function SignupForm({
@@ -25,19 +26,28 @@ export function SignupForm({
   transferLink,
   ...props
 }: MyCustomUserAuthFormProps) {
+  const [error, setError] = useState('');
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<SignupFormInputs>();
+  } = useForm<SignUpFormInputs>();
 
   const { user, isLoading } = useAppSelector((state) => state.user);
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const onSubmit = (data: SignupFormInputs) => {
-    dispatch(createUser({ email: data.email, password: data.password }));
+  const onSubmit = (data: SignUpFormInputs) => {
+    const { email, password, cPassword } = data;
+
+    if (password !== cPassword) {
+      return setError('Passwords do not match');
+    }
+
+    // create account
+    setError('');
+    dispatch(createUser({ email, password }));
   };
 
   const transfer = transferLink || '/';
@@ -76,13 +86,19 @@ export function SignupForm({
             />
             {errors.password && <p>{errors.password.message}</p>}
             <Input
-              id="password"
+              id="cPassword"
               placeholder="confirm password"
               type="password"
               autoCapitalize="none"
               autoCorrect="off"
+              {...register('cPassword', {
+                required: 'Confirm Password is required',
+              })}
             />
+            {errors.password && <p>{errors?.cPassword?.message}</p>}
           </div>
+
+          {error && <p className="text-red-500 font-thin">{error}</p>}
           <Button>Create Account</Button>
         </div>
       </form>
